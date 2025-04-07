@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReservationService } from '../reservation/reservation.service';
 import { Reservation } from '../models/reservation';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-reservation-form',
@@ -11,7 +12,8 @@ import { Reservation } from '../models/reservation';
 export class ReservationFormComponent {
   reservationForm: FormGroup = new FormGroup({});
 
-  constructor(private formBuilder: FormBuilder, private reservationService: ReservationService) {
+  constructor(private formBuilder: FormBuilder, private reservationService: ReservationService, private router: Router, private activatedRoute: ActivatedRoute) {
+
 
   }
 
@@ -22,7 +24,15 @@ export class ReservationFormComponent {
       guestName: ['', Validators.required],
       guestEmail: ['', [Validators.required, Validators.email]],
       roomNumber: ['', Validators.required],
-    }, { validators: this.dateValidator});
+    }, { validators: this.dateValidator });
+
+    const id = this.activatedRoute.snapshot.paramMap.get('id');
+    if (id) {
+      const reservation = this.reservationService.getReservation(id);
+      if (reservation) {
+        this.reservationForm.patchValue({ ...reservation });
+      }
+    }
   }
 
   dateValidator(group: AbstractControl): { [key: string]: boolean } | null {
@@ -30,18 +40,31 @@ export class ReservationFormComponent {
     const checkOutDate = group.get('checkOutDate')?.value;
 
     if (checkInDate && checkOutDate && new Date(checkOutDate) <= new Date(checkInDate)) {
+      console.log('Invalid date range:', checkInDate, checkOutDate);
       return { invalidDateRange: true };
     }
-    return { invalidDateRange: false };
+    console.log('Valid date range:', checkInDate, checkOutDate);
+    return null;
   }
 
   onSubmit(): void {
     if (!this.reservationForm.valid) {
       return;
-    } 
+    }
 
     let reservation: Reservation = this.reservationForm.value;
-    reservation.id = Math.random().toString(36).substring(2, 15); // Generate a random ID
-    this.reservationService.addReservation(reservation);
+    let id = this.activatedRoute.snapshot.paramMap.get('id');
+    if (id) {
+      reservation.id = id;
+      this.reservationService.updateReservation(id, reservation);
+      alert('Reservation updated successfully!');
+    } else {
+      this.reservationService.addReservation(reservation);
+      alert('Reservation added successfully!');
+      this.reservationForm.reset();
+    }
+
+
+    this.router.navigate(['/list']); // Navigate to the reservation list page
   }
 }

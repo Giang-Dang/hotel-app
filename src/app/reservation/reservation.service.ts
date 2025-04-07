@@ -20,6 +20,7 @@ export class ReservationService {
   }
 
   addReservation(reservation: Reservation): void {
+    reservation.id = Date.now().toString(); // Generate a unique ID based on timestamp
     this.reservations.push(reservation);
     this.saveReservationsToLocalStorage();
   }
@@ -32,9 +33,9 @@ export class ReservationService {
     this.saveReservationsToLocalStorage();
   }
 
-  updateReservation(updatedReservation: Reservation): void {
+  updateReservation(id: string, updatedReservation: Reservation): void {
     let index = this.reservations.findIndex(
-      (reservation) => reservation.id === updatedReservation.id
+      (reservation) => reservation.id === id
     );
     if (index !== -1) {
       this.reservations[index] = updatedReservation;
